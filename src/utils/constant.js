@@ -12,7 +12,7 @@ const success = {
     OTP_LIMIT: "You exceed your Wrong OTP limit. Now generate New OTP after 2 Minutes",
     ADMIN_LOGIN: "Logged in successfully",
     SALON_ADDED: "Salon added successfully.",
-    ALREADY_SALON: "Salon already found with this salon code.",
+    ALREADY_SALON: "Salon already found with this salon code or username.",
     SALON_UPDATED: "Salon updated successfully.",
     SLOTS_CREATED_ONBOARD: "Slots Created for 7 days including today.",
     SLOTS_CREATED_DAILY: "Slots created for all salons.",
@@ -20,7 +20,16 @@ const success = {
     DELETED: "Deleted.",
     SLOT_DISABLE: "Slot is disable",
     SLOT_ENABLE: "Slot is enable",
-    REACHED_LIMIT: "Limit reached."
+    REACHED_LIMIT: "Limit reached.",
+    REFUND_SLOT_ALREADY_BOOKED: "Sorry for the inconvenience, Selected Slot is not available. Your refund will be initiated. Try with another slot again.",
+    APPOINTMENT_BOOKED: "Your appointment is now booked.",
+    PAYMENT_PENDING: "Payment is pending. Try again for payment status after 5 second.",
+    SALON_DELETED: "Salon is deleted.",
+    APPOINTMENT_CANCEL: "Your appointment is now cancelled and your refund is being initiated.",
+    SALON_ENABLE: "Salon is now enabled.",
+    SALON_DISABLE: "Salon is now disabled.",
+    APPOINTMENT_INITIATED: "Your appointment for selected slot is initiated. Now please complete payment for booking.",
+    RESCHEDULE_APPOINTMENT_INITIATED: "Your reschedule appointment for selected slot is initiated. Now please complete payment for booking."
 }
 const error = {
     WRONG: "Something went wrong..",
@@ -42,7 +51,16 @@ const error = {
     WRONG_SALON_CODE: "Salon code is wrong or salon not available, check salon code.",
     OTHER_SALON_INFO: "You are not authorise to perform this task.",
     SLOT_NOT_FOUND: "Slot not found with this uuid.",
-    NOT_FOUND: "Not found"
+    NOT_FOUND: "Not found",
+    SLOT_NOT_AVAILABLE: "Selected slot is not found. It may be fully booked or not Active",
+    PAYMENT_FAILED: "Payment is failed. Try again.",
+    CAN_NOT_CANCEL: "You cannot cancel the appointment within 2 hour of the appointment time or after the appointment time.",
+    CAN_NOT_RESCHEDULE: "You cannot re-schedule the appointment within 1 hour of the appointment time.",
+    CODE_CHAR_REQ: "Salon code first 3 characters are required to send in query parameter.",
+    CODE_CHAR_LEN: "Salon code key should have length of 3.",
+    SALON_NOT_ACTIVE: "Salon is not active.",
+    CAN_NOT_PERFORM_TASK: "Can not perform this task",
+    APPOINTMENT_ALREADY_RESCHEDULED: "This appointment is already rescheduled.",
 }
 
 
