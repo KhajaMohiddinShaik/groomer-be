@@ -28,7 +28,15 @@ const salonSchema = new schema({
         type: String,
         required: true,
     },
+    salon_type: {
+        type: String,
+        required: true
+    },
     salon_address: {
+        type: String,
+        required: true,
+    },
+    salon_area: {
         type: String,
         required: true,
     },
@@ -171,7 +179,11 @@ const salonSchema = new schema({
         {
             type: String
         }    
-    ]
+    ],
+    salon_isActive: {
+        type: Boolean,
+        default: true
+    }
 },
     { timestamps: true }
 );

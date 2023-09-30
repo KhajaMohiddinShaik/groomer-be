@@ -12,13 +12,15 @@ const verifyOtp = require("../middleware/users/verifyOTP.joi.validator");
 const loginUser = require("../controller/users/loginUser.controller");
 const loginJoiValidator = require("../middleware/users/login.joi.validator");
 const showTimming = require("../controller/users/showTimming.controller")
-const {createWishList, getWishList, deleteWishList} = require("../controller/users/wishlist.controller")
-const {createFeedback, getFeedback} = require("../controller/users/feedback.controller")
+const { createWishList, getWishList, deleteWishList } = require("../controller/users/wishlist.controller")
+const { createFeedback, getFeedback } = require("../controller/users/feedback.controller")
 const ContactModel = require("../models/users/contactUs.model")
 const HomeServiceModel = require("../models/users/homeService.model")
 const { v4: uuidv4 } = require('uuid');
 const SalonModel = require("../models/client/salon.model")
-
+const {newAppointment, cancelAppointment, reScheduleAppointment, appointments} = require("../controller/users/appointment.controller")
+const appointmentValidator = require("../middleware/users/appointment.validation")
+const rescheduleValidator = require("../middleware/users/reschedule.validation")
 // router for user or customer registration
 router.post("/registration", registrationValidator, async (req, res) => {
     try {
@@ -33,8 +35,9 @@ router.post("/registration/generateOtp", generateOtpValidator, async (req, res) 
     let response;
     try {
         response = await OtpGenerate(req, res);
-        res.send(response)
+        res.status(response.code).json(response)
     } catch (error) {
+
         res.send(errorResponse(500, messages.error.WRONG))
     }
 })
@@ -43,7 +46,7 @@ router.post("/registration/verification", verifyOtp, async (req, res) => {
     let response;
     try {
         response = await verifyNewUser(req, res);
-        res.send(response)
+        res.status(response.code).json(response)
     } catch (error) {
         res.send(errorResponse(500, messages.error.WRONG))
     }
@@ -54,7 +57,7 @@ router.post("/login/generateOtp", generateOtpValidator, async (req, res) => {
     let response;
     try {
         response = await OtpGenerate(req, res);
-        res.send(response)
+        res.status(response.code).json(response)
     } catch (error) {
         res.send(errorResponse(500, messages.error.WRONG))
     }
@@ -64,57 +67,110 @@ router.post("/login/verification", loginJoiValidator, async (req, res) => {
     let response;
     try {
         response = await loginUser(req, res);
-        return res.send(response);
+        return res.status(response.code).json(response);
     } catch (error) {
         console.log(error);
         return res.send(errorResponse(500, messages.error.WRONG));
     }
 });
+
+// route for getting all salon in the city with authentication 
 router.get("/auth-salons", tokenAuthentication, async (req, res) => {
     try {
         const city = req.query.city
-        const salons = await SalonModel.find({salon_city: city}).select("-_id salon_name salon_address salon_city salon_state salon_languages salon_features salon_photos")
+        const salons = await SalonModel.find({ salon_city: city, salon_isActive: true }).select("-_id salon_name salon_address salon_city salon_state salon_languages salon_features salon_photos")
         return res.send(successResponse(201, messages.success.SUCCESS, salons))
     } catch (error) {
         console.log(error);
         return res.send(errorResponse(500, messages.error.WRONG));
     }
 })
+// route for getting all salon in the city without authentication 
 router.get("/salons", async (req, res) => {
     try {
         const city = req.query.city
-        const salons = await SalonModel.find({salon_city: city}).select("-_id salon_name salon_address salon_city salon_state salon_languages salon_features salon_photos")
+        const salons = await SalonModel.find({ salon_city: city, salon_isActive: true }).select("-_id salon_name salon_address salon_city salon_state salon_languages salon_features salon_photos")
         return res.send(successResponse(201, messages.success.SUCCESS, salons))
     } catch (error) {
         console.log(error);
         return res.send(errorResponse(500, messages.error.WRONG));
     }
 })
+// route for searching salons by name
 router.get("/search/salon", async (req, res) => {
     try {
         const salonName = req.query.name
-        const salons = await SalonModel.find({"salon_name": { "$regex": salonName, "$options": "i"}}).select("-_id salon_name salon_address salon_city salon_state salon_languages salon_features salon_photos")
+        const salons = await SalonModel.find({ "salon_name": { "$regex": salonName, "$options": "i" }, salon_isActive: true }).select("-_id salon_name salon_address salon_city salon_state salon_languages salon_features salon_photos")
         return res.send(successResponse(201, messages.success.SUCCESS, salons))
     } catch (error) {
         console.log(error);
         return res.send(errorResponse(500, messages.error.WRONG));
     }
 })
-router.get("/showtimings/:uuid", tokenAuthentication,async (req, res) => {
+router.get("/showtimings/:uuid", tokenAuthentication, async (req, res) => {
     let response;
     try {
         response = await showTimming(req)
-        return res.send(response)
+        return res.status(response.code).json(response)
     } catch (error) {
         console.log(error);
         return res.send(errorResponse(500, messages.error.WRONG));
     }
 })
+
+// route for creating appointments 
+router.post("/create_appointment", tokenAuthentication, appointmentValidator, async (req, res) => {
+    let response;
+    try {
+        response = await newAppointment(req)
+        return res.status(response.code).json(response)
+    } catch (error) {
+        console.log(error);
+        return res.send(errorResponse(500, messages.error.WRONG));
+    }
+})
+
+// route for cancelling the appointment 
+router.get("/cancel_appointment/:uuid", tokenAuthentication, async (req, res) => {
+    let response;
+    try {
+        response = await cancelAppointment(req)
+        return res.status(response.code).json(response)
+    } catch (error) {
+        console.log(error);
+        return res.send(errorResponse(500, messages.error.WRONG));
+    }
+})
+
+// route for reschedule the appointments 
+router.post("/reschedule_appointment", tokenAuthentication, rescheduleValidator, async (req, res) => {
+    let response;
+    try {
+        response = await reScheduleAppointment(req)
+        return res.status(response.code).json(response)
+    } catch (error) {
+        console.log(error);
+        return res.send(errorResponse(500, messages.error.WRONG));
+    }
+})
+
+// route for getting all appointments 
+router.get("/appointments", tokenAuthentication, async (req, res) => {
+    let response;
+    try {
+        response = await appointments(req)
+        return res.status(response.code).json(response)
+    } catch (error) {
+        console.log(error);
+        return res.send(errorResponse(500, messages.error.WRONG));
+    }
+})
+
 router.post("/wishlist/create", tokenAuthentication, async (req, res) => {
     let response;
     try {
         response = await createWishList(req)
-        return res.send(response)
+        return res.status(response.code).json(response)
     } catch (error) {
         console.log(error);
         return res.send(errorResponse(500, messages.error.WRONG));
@@ -124,7 +180,7 @@ router.get("/wishlist/getwishlist", tokenAuthentication, async (req, res) => {
     let response;
     try {
         response = await getWishList(req)
-        return res.send(response)
+        return res.status(response.code).json(response)
     } catch (error) {
         console.log(error);
         return res.send(errorResponse(500, messages.error.WRONG));
@@ -134,7 +190,7 @@ router.delete("/wishlist/delete", tokenAuthentication, async (req, res) => {
     let response;
     try {
         response = await deleteWishList(req)
-        return res.send(response)
+        return res.status(response.code).json(response)
     } catch (error) {
         console.log(error);
         return res.send(errorResponse(500, messages.error.WRONG));
@@ -145,7 +201,7 @@ router.post("/feedback/create", tokenAuthentication, async (req, res) => {
     let response;
     try {
         response = await createFeedback(req)
-        return res.send(response)
+        return res.status(response.code).json(response)
     } catch (error) {
         console.log(error);
         return res.send(errorResponse(500, messages.error.WRONG));
@@ -155,7 +211,7 @@ router.get("/feedback/getFeedback", tokenAuthentication, async (req, res) => {
     let response;
     try {
         response = await getFeedback(req)
-        return res.send(response)
+        return res.status(response.code).json(response)
     } catch (error) {
         console.log(error);
         return res.send(errorResponse(500, messages.error.WRONG));
@@ -163,7 +219,7 @@ router.get("/feedback/getFeedback", tokenAuthentication, async (req, res) => {
 })
 router.get("/homeService", tokenAuthentication, async (req, res) => {
     try {
-        const homeService = new HomeServiceModel({home_uuid: uuidv4(), home_email: req.email, home_mobile: req.mobile})
+        const homeService = new HomeServiceModel({ home_uuid: uuidv4(), home_email: req.email, home_mobile: req.mobile })
         await homeService.save()
         return res.send(successResponse(201, messages.success.SUCCESS, {}))
     } catch (error) {
@@ -176,7 +232,7 @@ router.post("/contactUs", async (req, res) => {
     const name = req.body.name
     const message = req.body.message
     try {
-        const contact = new ContactModel({contact_uuid: uuidv4(), contact_email: email, contact_name: name, contact_message: message})
+        const contact = new ContactModel({ contact_uuid: uuidv4(), contact_email: email, contact_name: name, contact_message: message })
         await contact.save()
         return res.send(successResponse(201, messages.success.SUCCESS, {}))
     } catch (error) {
