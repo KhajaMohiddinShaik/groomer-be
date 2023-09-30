@@ -18,7 +18,12 @@ app.use(cors());
 
 // app.use('/static', express.static(path.join(__dirname, '/src/static')))
 // for using static files
+app.use(express.static(path.join(__dirname, "build")));
 app.use("/public", express.static(`${__dirname}/public`));
+
+app.use("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "build", "index.html"));
+});
 
 //route for user or customer
 const userRouter = require("./src/routers/user.router");
