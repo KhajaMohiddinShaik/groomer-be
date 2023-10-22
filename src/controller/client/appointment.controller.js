@@ -23,6 +23,9 @@ const appointments = async (req) => {
             $lte: parsedEndDate,
         };
     }
+    // Count total appointments
+    const totalAppointments = await AppointmentModel.countDocuments(filter);
+
     const options = {
         skip: (page - 1) * limit,
         limit: parseInt(limit),
@@ -33,10 +36,22 @@ const appointments = async (req) => {
             updatedAt: 0,
             appointment_is_reappointment: 0,
         },
+        sort: { createdAt: -1 }
     };
 
     const appointments = await AppointmentModel.find(filter, null, options);
-    return successResponse(200, messages.success.SUCCESS, {appointments: appointments})
+    return successResponse(200, messages.success.SUCCESS, {appointments, totalAppointments})
 }
 
-module.exports = {appointments}
+const markCompleteAppointment = async (req) => {
+    const appointmentUuid = req.body.appointment_uuid
+    const appointment = await AppointmentModel.findOne({appointment_uuid: appointmentUuid, appointment_status: "booked"})
+    if (!appointment) return errorResponse(400, messages.error.CAN_NOT_PERFORM_TASK, {})
+    appointment.appointment_status = "completed"
+    appointment.appointment_is_active = false
+    await appointment.save()
+    return successResponse(200, messages.success.SUCCESS, {})
+
+}
+
+module.exports = {appointments, markCompleteAppointment}
