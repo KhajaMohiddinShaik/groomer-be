@@ -13,12 +13,12 @@ const {getSalonById, getAllSalons} = require("../controller/admin/getSalons.cont
 const updateSalon = require("../controller/admin/updateSalon.controller.js")
 const generateSlotOnBoard = require("../controller/admin/slotOnboard.controller")
 const generateDailySlots = require("../controller/admin/dailySlots.controller")
-const {getFeedback, deleteFeedback} = require("../controller/admin/feedback.controller")
+const {getFeedback, deleteFeedback, createFeedback} = require("../controller/admin/feedback.controller")
 const ContactModel = require("../models/users/contactUs.model")
 const HomeServiceModel = require("../models/users/homeService.model")
 const newSalonValidation = require("../middleware/admin/newSalon.joi.validator")
-const {deleteSalonBySalonId, toggleSalon, salonCode} = require("../controller/admin/salon.controller")
-
+const {deleteSalonBySalonId, toggleSalon, salonCode, toggleSalonRecommend, recommendedSalonsCode} = require("../controller/admin/salon.controller")
+const {completeAppointments} = require("../controller/admin/appointment.controller")
 // route for creating new admin 
 router.post("/registration", newAdminValidator, async (req, res) => {
     try {
@@ -146,6 +146,18 @@ router.get("/generateDailySlots", async (req, res)=>{
         return res.status(500).json(errorResponse(500, messages.error.WRONG));
     }
 })
+
+router.post("/feedback", tokenAuthentication, async (req, res) => {
+    let response;
+    try {
+        response = await createFeedback(req)
+        return res.status(response.code).json(response)
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json(errorResponse(500, messages.error.WRONG));
+    }
+})
+
 router.get("/feedback/getFeedback", tokenAuthentication, async (req, res) => {
     let response;
     try {
@@ -184,6 +196,7 @@ router.delete("/contact", tokenAuthentication, async (req, res) => {
         return res.status(500).json(errorResponse(500, messages.error.WRONG));
     }
 })
+
 router.get("/homeService", tokenAuthentication, async (req, res) => {
     try {
         const services = await HomeServiceModel.find()
@@ -197,6 +210,40 @@ router.delete("/homeService", tokenAuthentication, async (req, res) => {
     try {
         const service = await HomeServiceModel.findOneAndDelete({home_uuid: req.body.service_uuid})
         return res.status(202).json(successResponse(202, messages.success.DELETED, {}))
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json(errorResponse(500, messages.error.WRONG));
+    }
+})
+
+// router for changing all the booked appointments status to complete 
+router.patch("/update-appointments-status", tokenAuthentication, async (req, res) => {
+    try {
+        const response = await completeAppointments(req)
+        return res.status(response.code).json(response)
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json(errorResponse(500, messages.error.WRONG));
+    }
+})
+
+
+// router for toggle salon recommended 
+router.patch("/toggle-recommended", tokenAuthentication, async (req, res) => {
+    try {
+        const response = await toggleSalonRecommend(req)
+        return res.status(response.code).json(response)
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json(errorResponse(500, messages.error.WRONG));
+    }
+})
+
+// router for getting recommended salons code
+router.get("/recommended-salon-code", tokenAuthentication, async (req, res) => {
+    try {
+        const response = await recommendedSalonsCode(req)
+        return res.status(response.code).json(response)
     } catch (error) {
         console.log(error);
         return res.status(500).json(errorResponse(500, messages.error.WRONG));

@@ -22,6 +22,7 @@ const {newAppointment, cancelAppointment, reScheduleAppointment, appointments} =
 const appointmentValidator = require("../middleware/users/appointment.validation")
 const rescheduleValidator = require("../middleware/users/reschedule.validation")
 const {salonsByCity, salonByUuid} = require("../controller/users/salon.controller")
+const {user} = require("../controller/users/user.controller.js")
 
 // router for user or customer registration
 router.post("/registration", registrationValidator, async (req, res) => {
@@ -54,6 +55,18 @@ router.post("/registration/verification", verifyOtp, async (req, res) => {
     }
 })
 
+// login verification through email and otp
+router.post("/login/verification", loginJoiValidator, async (req, res) => {
+    let response;
+    try {
+        response = await loginUser(req, res);
+        return res.status(response.code).json(response);
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json(errorResponse(500, messages.error.WRONG));
+    }
+});
+
 //otp generation for login and sending to email id
 router.post("/login/generateOtp", generateOtpValidator, async (req, res) => {
     let response;
@@ -65,28 +78,29 @@ router.post("/login/generateOtp", generateOtpValidator, async (req, res) => {
     }
 })
 // login verification through email and otp
-router.post("/login/verification", loginJoiValidator, async (req, res) => {
+router.get("/details", tokenAuthentication, async (req, res) => {
     let response;
     try {
-        response = await loginUser(req, res);
+        response = await user(req);
         return res.status(response.code).json(response);
     } catch (error) {
         console.log(error);
-        return res.send(errorResponse(500, messages.error.WRONG));
+        return res.status(500).json(errorResponse(500, messages.error.WRONG));
     }
 });
 
-// route for getting all salon in the city with authentication 
-router.get("/auth-salons", tokenAuthentication, async (req, res) => {
+// route for getting all recommended salons of the city
+router.get("/recommended-salons", tokenAuthentication, async (req, res) => {
     try {
-        const city = req.query.city
-        const salons = await SalonModel.find({ salon_city: city, salon_isActive: true }).select("-_id salon_name salon_address salon_city salon_state salon_languages salon_features salon_photos")
+        const city = req.query.city || process.env.DEFAULT_CITY
+        const salons = await SalonModel.find({ salon_city: city, salon_isActive: true, salon_is_recommended: true }).select("-_id salon_uuid salon_code salon_name salon_description salon_address salon_photos")
         return res.send(successResponse(201, messages.success.SUCCESS, salons))
     } catch (error) {
         console.log(error);
-        return res.send(errorResponse(500, messages.error.WRONG));
+        return res.status(500).json(errorResponse(500, messages.error.WRONG));
     }
 })
+
 // route for getting all salon in the city without authentication 
 router.get("/salons", async (req, res) => {
     try {
@@ -94,7 +108,7 @@ router.get("/salons", async (req, res) => {
         return res.status(response.code).json(response)
     } catch (error) {
         console.log(error);
-        return res.send(errorResponse(500, messages.error.WRONG));
+        return res.status(500).json(errorResponse(500, messages.error.WRONG));
     }
 })
 
@@ -105,7 +119,7 @@ router.get("/salon", async (req, res) => {
         return res.status(response.code).json(response)
     } catch (error) {
         console.log(error);
-        return res.send(errorResponse(500, messages.error.WRONG));
+        return res.status(500).json(errorResponse(500, messages.error.WRONG));
     }
 })
 
@@ -114,10 +128,10 @@ router.get("/search/salon", async (req, res) => {
     try {
         const salonName = req.query.name
         const salons = await SalonModel.find({ "salon_name": { "$regex": salonName, "$options": "i" }, salon_isActive: true }).select("-_id salon_name salon_address salon_city salon_state salon_languages salon_features salon_photos")
-        return res.send(successResponse(201, messages.success.SUCCESS, salons))
+        return res.status(200).json(successResponse(200, messages.success.SUCCESS, salons))
     } catch (error) {
         console.log(error);
-        return res.send(errorResponse(500, messages.error.WRONG));
+        return res.status(500).json(errorResponse(500, messages.error.WRONG));
     }
 })
 router.get("/showtimings/:uuid", tokenAuthentication, async (req, res) => {
@@ -127,7 +141,7 @@ router.get("/showtimings/:uuid", tokenAuthentication, async (req, res) => {
         return res.status(response.code).json(response)
     } catch (error) {
         console.log(error);
-        return res.send(errorResponse(500, messages.error.WRONG));
+        return res.status(500).json(errorResponse(500, messages.error.WRONG));
     }
 })
 
@@ -139,7 +153,7 @@ router.post("/create_appointment", tokenAuthentication, appointmentValidator, as
         return res.status(response.code).json(response)
     } catch (error) {
         console.log(error);
-        return res.send(errorResponse(500, messages.error.WRONG));
+        return res.status(500).json(errorResponse(500, messages.error.WRONG));
     }
 })
 
@@ -151,7 +165,7 @@ router.get("/cancel_appointment/:uuid", tokenAuthentication, async (req, res) =>
         return res.status(response.code).json(response)
     } catch (error) {
         console.log(error);
-        return res.send(errorResponse(500, messages.error.WRONG));
+        return res.status(500).json(errorResponse(500, messages.error.WRONG));
     }
 })
 
@@ -163,7 +177,7 @@ router.post("/reschedule_appointment", tokenAuthentication, rescheduleValidator,
         return res.status(response.code).json(response)
     } catch (error) {
         console.log(error);
-        return res.send(errorResponse(500, messages.error.WRONG));
+        return res.status(500).json(errorResponse(500, messages.error.WRONG));
     }
 })
 
@@ -175,7 +189,7 @@ router.get("/appointments", tokenAuthentication, async (req, res) => {
         return res.status(response.code).json(response)
     } catch (error) {
         console.log(error);
-        return res.send(errorResponse(500, messages.error.WRONG));
+        return res.status(500).json(errorResponse(500, messages.error.WRONG));
     }
 })
 
@@ -186,17 +200,17 @@ router.post("/wishlist/create", tokenAuthentication, async (req, res) => {
         return res.status(response.code).json(response)
     } catch (error) {
         console.log(error);
-        return res.send(errorResponse(500, messages.error.WRONG));
+        return res.status(500).json(errorResponse(500, messages.error.WRONG));
     }
 })
-router.get("/wishlist/getwishlist", tokenAuthentication, async (req, res) => {
+router.get("/wishlist", tokenAuthentication, async (req, res) => {
     let response;
     try {
         response = await getWishList(req)
         return res.status(response.code).json(response)
     } catch (error) {
         console.log(error);
-        return res.send(errorResponse(500, messages.error.WRONG));
+        return res.status(500).json(errorResponse(500, messages.error.WRONG));
     }
 })
 router.delete("/wishlist/delete", tokenAuthentication, async (req, res) => {
@@ -206,7 +220,7 @@ router.delete("/wishlist/delete", tokenAuthentication, async (req, res) => {
         return res.status(response.code).json(response)
     } catch (error) {
         console.log(error);
-        return res.send(errorResponse(500, messages.error.WRONG));
+        return res.status(500).json(errorResponse(500, messages.error.WRONG));
     }
 })
 
@@ -217,17 +231,18 @@ router.post("/feedback/create", tokenAuthentication, async (req, res) => {
         return res.status(response.code).json(response)
     } catch (error) {
         console.log(error);
-        return res.send(errorResponse(500, messages.error.WRONG));
+        return res.status(500).json(errorResponse(500, messages.error.WRONG));
     }
 })
-router.get("/feedback/getFeedback", tokenAuthentication, async (req, res) => {
+
+router.get("/feedback/getFeedback", async (req, res) => {
     let response;
     try {
         response = await getFeedback(req)
         return res.status(response.code).json(response)
     } catch (error) {
         console.log(error);
-        return res.send(errorResponse(500, messages.error.WRONG));
+        return res.status(500).json(errorResponse(500, messages.error.WRONG));
     }
 })
 router.get("/homeService", tokenAuthentication, async (req, res) => {
@@ -237,7 +252,7 @@ router.get("/homeService", tokenAuthentication, async (req, res) => {
         return res.send(successResponse(201, messages.success.SUCCESS, {}))
     } catch (error) {
         console.log(error);
-        return res.send(errorResponse(500, messages.error.WRONG));
+        return res.status(500).json(errorResponse(500, messages.error.WRONG));
     }
 })
 router.post("/contactUs", async (req, res) => {
@@ -250,7 +265,7 @@ router.post("/contactUs", async (req, res) => {
         return res.send(successResponse(201, messages.success.SUCCESS, {}))
     } catch (error) {
         console.log(error);
-        return res.send(errorResponse(500, messages.error.WRONG));
+        return res.status(500).json(errorResponse(500, messages.error.WRONG));
     }
 })
 
