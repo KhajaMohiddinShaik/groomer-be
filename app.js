@@ -16,6 +16,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
 
+// app.use('/static', express.static(path.join(__dirname, '/src/static')))
 // for using static files
 app.use("/public", express.static(`${__dirname}/public`));
 
